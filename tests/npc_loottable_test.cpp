@@ -21,8 +21,8 @@
 #include "../zone/zonedb.h"
 #include "../zone/zonedump.h"
 #include "../zone/common.h"
-#include "../common/fmt/format.h"
-#include "../common/items.h"
+#include "../common/item_data.h"
+#include <fmt/format.h>
 #include <sstream>
 
 // Global mocks
