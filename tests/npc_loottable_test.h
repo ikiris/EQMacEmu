@@ -41,7 +41,8 @@ class Zone;
 class ZoneDatabase;
 
 // Test configuration structures
-struct LootTableEntryConfig {
+struct LootTableEntryConfig
+{
 	uint32 lootdrop_id;
 	uint8 multiplier;
 	uint8 probability;
@@ -50,7 +51,8 @@ struct LootTableEntryConfig {
 	uint8 multiplier_min;
 };
 
-struct LootDropEntryConfig {
+struct LootDropEntryConfig
+{
 	uint32 item_id;
 	float chance;
 	uint8 multiplier;
@@ -60,67 +62,78 @@ struct LootDropEntryConfig {
 	uint8 maxlevel;
 };
 
-struct LootTableTestConfig {
+struct LootTableTestConfig
+{
 	uint32 loottable_id;
 	std::string loottable_name;
 	uint32 mincash;
 	uint32 maxcash;
 	uint32 avgcoin;
-	
+
 	// Loot table entries
 	std::vector<LootTableEntryConfig> loottable_entries;
-	
+
 	// Loot drops (keyed by lootdrop_id)
 	std::map<uint32, std::vector<LootDropEntryConfig>> lootdrops;
-	
+
 	// Expected percentages: maps complete sorted item ID lists (can include duplicates) to expected percentage
 	// Example: {1001, 1001, 1002} -> 15.0 means this exact pattern should occur ~15% of the time
 	std::map<std::vector<uint32>, float> expected_percentages;
-	
-	float variance_tolerance = 2.0f;  // ±2% default
+
+	float variance_tolerance = 2.0f; // ±2% default
 };
 
 // Mock Zone class
-class MockZone {
+class MockZone
+{
 public:
 	EQ::Random random;
-	
+
 	std::map<uint32, LoottableRepository::Loottable> loottables;
 	std::map<uint32, std::vector<LoottableEntriesRepository::LoottableEntries>> loottable_entries;
 	std::map<uint32, LootdropRepository::Lootdrop> lootdrops;
 	std::map<uint32, std::vector<LootdropEntriesRepository::LootdropEntries>> lootdrop_entries;
-	
-	void LoadLootTable(uint32 loottable_id) {
+
+	void LoadLootTable(uint32 loottable_id)
+	{
 		// No-op, data provided directly
 	}
-	
-	LoottableRepository::Loottable* GetLootTable(uint32 loottable_id) {
+
+	LoottableRepository::Loottable *GetLootTable(uint32 loottable_id)
+	{
 		auto it = loottables.find(loottable_id);
-		if (it != loottables.end()) {
+		if (it != loottables.end())
+		{
 			return &it->second;
 		}
 		return nullptr;
 	}
-	
-	std::vector<LoottableEntriesRepository::LoottableEntries> GetLootTableEntries(uint32 loottable_id) const {
+
+	std::vector<LoottableEntriesRepository::LoottableEntries> GetLootTableEntries(uint32 loottable_id) const
+	{
 		auto it = loottable_entries.find(loottable_id);
-		if (it != loottable_entries.end()) {
+		if (it != loottable_entries.end())
+		{
 			return it->second;
 		}
 		return std::vector<LoottableEntriesRepository::LoottableEntries>();
 	}
-	
-	LootdropRepository::Lootdrop GetLootdrop(uint32 lootdrop_id) const {
+
+	LootdropRepository::Lootdrop GetLootdrop(uint32 lootdrop_id) const
+	{
 		auto it = lootdrops.find(lootdrop_id);
-		if (it != lootdrops.end()) {
+		if (it != lootdrops.end())
+		{
 			return it->second;
 		}
 		return LootdropRepository::Lootdrop();
 	}
-	
-	std::vector<LootdropEntriesRepository::LootdropEntries> GetLootdropEntries(uint32 lootdrop_id) const {
+
+	std::vector<LootdropEntriesRepository::LootdropEntries> GetLootdropEntries(uint32 lootdrop_id) const
+	{
 		auto it = lootdrop_entries.find(lootdrop_id);
-		if (it != lootdrop_entries.end()) {
+		if (it != lootdrop_entries.end())
+		{
 			return it->second;
 		}
 		return std::vector<LootdropEntriesRepository::LootdropEntries>();
@@ -128,9 +141,11 @@ public:
 };
 
 // Mock Database class
-class MockDatabase {
+class MockDatabase
+{
 public:
-	struct MockItemData {
+	struct MockItemData
+	{
 		uint32 ID;
 		std::string Name;
 		uint8 MaxCharges;
@@ -143,16 +158,19 @@ public:
 		uint32 Slots;
 		bool NoDrop;
 	};
-	
+
 	std::map<uint32, MockItemData> items;
-	
-	const EQ::ItemData* GetItem(uint32 item_id) {
+
+	const EQ::ItemData *GetItem(uint32 item_id)
+	{
 		auto it = items.find(item_id);
-		if (it != items.end()) {
+		if (it != items.end())
+		{
 			// Convert MockItemData to EQ::ItemData
 			// For testing, we'll create a minimal ItemData
 			static std::map<uint32, std::unique_ptr<EQ::ItemData>> item_cache;
-			if (item_cache.find(item_id) == item_cache.end()) {
+			if (item_cache.find(item_id) == item_cache.end())
+			{
 				auto item = std::make_unique<EQ::ItemData>();
 				memset(item.get(), 0, sizeof(EQ::ItemData));
 				item->ID = it->second.ID;
@@ -172,42 +190,51 @@ public:
 		}
 		return nullptr;
 	}
-	
-	EQ::item::QuantityType ItemQuantityType(uint32 item_id) {
+
+	EQ::item::QuantityType ItemQuantityType(uint32 item_id)
+	{
 		auto it = items.find(item_id);
-		if (it != items.end() && it->second.MaxCharges > 0) {
+		if (it != items.end() && it->second.MaxCharges > 0)
+		{
 			return EQ::item::Quantity_Charges;
 		}
 		return EQ::item::Quantity_Normal;
 	}
-	
-	EQ::ItemInstance* CreateItem(uint32 item_id, int8 charges, const QuarmItemData& quarm_item_data) {
+
+	EQ::ItemInstance *CreateItem(uint32 item_id, int8 charges, const QuarmItemData &quarm_item_data)
+	{
 		// Return nullptr for testing - we don't need actual item instances
 		return nullptr;
 	}
 };
 
 // Mock ContentService
-class MockContentService {
+class MockContentService
+{
 public:
-	bool DoesPassContentFiltering(const ContentFlags& flags) {
-		return true;  // Always pass for testing
+	bool DoesPassContentFiltering(const ContentFlags &flags)
+	{
+		return true; // Always pass for testing
 	}
 };
 
 // Helper function to run loot table test
 // Implementation is in npc_loottable_test.cpp
-void RunLootTableTest(const LootTableTestConfig& config);
+void RunLootTableTest(const LootTableTestConfig &config);
 
-class NPCLootTableTest : public Test::Suite {
-	typedef void(NPCLootTableTest::*TestFunction)(void);
+class NPCLootTableTest : public Test::Suite
+{
+	typedef void (NPCLootTableTest::*TestFunction)(void);
+
 public:
-	NPCLootTableTest() {
+	NPCLootTableTest()
+	{
 		// Test methods will be added here by user
 		// Example: TEST_ADD(NPCLootTableTest::TestBasicLootTable);
 	}
 
-	~NPCLootTableTest() {
+	~NPCLootTableTest()
+	{
 	}
 
 private:
@@ -221,4 +248,3 @@ private:
 };
 
 #endif
-
