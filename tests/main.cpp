@@ -16,7 +16,6 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -31,12 +30,13 @@
 #include "string_util_test.h"
 #include "data_verification_test.h"
 #include "skills_util_test.h"
+#include "npc_loottable_test.h"
 #include "../common/eqemu_config.h"
 #include "../common/eqemu_logsys.h"
 
 const EQEmuConfig *Config;
-EQEmuLogSys       LogSys;
-PathManager       path;
+EQEmuLogSys LogSys;
+PathManager path;
 
 int main()
 {
@@ -45,8 +45,9 @@ int main()
 	path.LoadPaths();
 
 	auto ConfigLoadResult = EQEmuConfig::LoadConfig();
-        Config = EQEmuConfig::get();
-	try {
+	Config = EQEmuConfig::get();
+	try
+	{
 		std::ofstream outfile("test_output.txt");
 		std::unique_ptr<Test::Output> output(new Test::TextOutput(Test::TextOutput::Verbose, outfile));
 		Test::Suite tests;
@@ -59,8 +60,11 @@ int main()
 		tests.add(new StringUtilTest());
 		tests.add(new DataVerificationTest());
 		tests.add(new SkillsUtilsTest());
+		tests.add(new NPCLootTableTest());
 		tests.run(*output, true);
-	} catch(...) {
+	}
+	catch (...)
+	{
 		return -1;
 	}
 	return 0;

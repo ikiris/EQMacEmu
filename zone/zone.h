@@ -471,6 +471,7 @@ public:
 	std::vector<NpcFactionEntriesRepository::NpcFactionEntries> GetNPCFactionEntries(const uint32 npc_faction_id) const;
 
 private:
+	friend class TestZoneHelper;  // For unit testing
 	uint32	zoneid;
 	uint32	guildid;
 	char*	short_name;

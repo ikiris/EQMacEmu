@@ -112,7 +112,7 @@ public:
 		}
 
 protected:
-
+		friend class TestDatabaseHelper;  // For unit testing
 		std::unique_ptr<EQ::MemoryMappedFile>                   skill_caps_mmf;
 		std::unique_ptr<EQ::MemoryMappedFile>                   items_mmf;
 		std::unique_ptr<EQ::FixedMemoryHashSet<EQ::ItemData>>   items_hash;
