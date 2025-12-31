@@ -20,15 +20,10 @@
 #define __EQEMU_TESTS_NPC_LOOTTABLE_H
 
 #include "cppunit/cpptest.h"
-#include "../zone/npc.h"
-#include "../zone/zone.h"
-#include "../zone/zonedb.h"
 #include "../common/repositories/loottable_repository.h"
 #include "../common/repositories/loottable_entries_repository.h"
 #include "../common/repositories/lootdrop_repository.h"
 #include "../common/repositories/lootdrop_entries_repository.h"
-#include "../common/random.h"
-#include "../common/content/world_content_service.h"
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -39,6 +34,7 @@
 struct NPCType;
 class Zone;
 class ZoneDatabase;
+class NPC;
 
 // Test configuration structures
 struct LootTableEntryConfig
@@ -149,7 +145,7 @@ public:
 		uint32 ID;
 		std::string Name;
 		uint8 MaxCharges;
-		EQ::item::ItemType ItemType;
+		uint8 ItemType;  // ItemType is uint8, uses ItemTypes enum values
 		uint16 Material;
 		uint32 Color;
 		std::string IDFile;
@@ -191,7 +187,7 @@ public:
 		return nullptr;
 	}
 
-	EQ::item::QuantityType ItemQuantityType(uint32 item_id)
+	EQ::item::ItemQuantity ItemQuantityType(uint32 item_id)
 	{
 		auto it = items.find(item_id);
 		if (it != items.end() && it->second.MaxCharges > 0)
@@ -218,10 +214,6 @@ public:
 	}
 };
 
-// Helper function to run loot table test
-// Implementation is in npc_loottable_test.cpp
-void RunLootTableTest(const LootTableTestConfig &config);
-
 class NPCLootTableTest : public Test::Suite
 {
 	typedef void (NPCLootTableTest::*TestFunction)(void);
@@ -229,8 +221,7 @@ class NPCLootTableTest : public Test::Suite
 public:
 	NPCLootTableTest()
 	{
-		// Test methods will be added here by user
-		// Example: TEST_ADD(NPCLootTableTest::TestBasicLootTable);
+		TEST_ADD(NPCLootTableTest::TestStdLoot);
 	}
 
 	~NPCLootTableTest()
@@ -238,13 +229,52 @@ public:
 	}
 
 private:
-	// Test methods can be added here
-	// Example:
-	// void TestBasicLootTable() {
-	//     LootTableTestConfig config;
-	//     // ... configure test ...
-	//     RunLootTableTest(config);
-	// }
+	// Helper function to run loot table test
+	// Implementation is in npc_loottable_test.cpp
+	// (Must be member function to use TEST_ASSERT_MSG macros)
+	void RunLootTableTest(const LootTableTestConfig &config);
+
+	// Test basic single item loot table
+	// This test verifies a loot table with one lootdrop containing one item with 50% chance
+	void TestStdLoot()
+	{
+		LootTableTestConfig config;
+		config.loottable_id = 1000;
+		config.loottable_name = "Test Basic Single Item";
+		config.mincash = 0;
+		config.maxcash = 0;
+		config.avgcoin = 0;
+		config.variance_tolerance = 2.0f; // ±2% tolerance
+
+		// Create a loot table entry that references lootdrop 1 with 100% probability
+		LootTableEntryConfig entry_config;
+		entry_config.lootdrop_id = 1;
+		entry_config.multiplier = 1;
+		entry_config.probability = 100; // 100% chance to roll this lootdrop
+		entry_config.droplimit = 0;
+		entry_config.mindrop = 0;
+		entry_config.multiplier_min = 0;
+		config.loottable_entries.push_back(entry_config);
+
+		// Create lootdrop 1 with a single item (item ID 1001) at 50% chance
+		LootDropEntryConfig item_config;
+		item_config.item_id = 1001;
+		item_config.chance = 50.0f; // 50% chance to drop
+		item_config.multiplier = 1;
+		item_config.item_charges = 0;
+		item_config.equip_item = 0;
+		item_config.minlevel = 0;
+		item_config.maxlevel = 255;
+		config.lootdrops[1].push_back(item_config);
+
+		// Expected outcomes:
+		// Empty loot (item doesn't drop): ~50% of the time
+		// Item 1001: ~50% of the time
+		config.expected_percentages[std::vector<uint32>{}] = 50.0f; // No items
+		config.expected_percentages[std::vector<uint32>{1001}] = 50.0f; // Item 1001
+
+		RunLootTableTest(config);
+	}
 };
 
 #endif

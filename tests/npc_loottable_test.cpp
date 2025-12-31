@@ -17,11 +17,14 @@
 */
 
 #include "npc_loottable_test.h"
+#include "../zone/npc.h"
 #include "../zone/zone.h"
 #include "../zone/zonedb.h"
 #include "../zone/zonedump.h"
 #include "../zone/common.h"
 #include "../common/item_data.h"
+#include "../common/random.h"
+#include "../common/content/world_content_service.h"
 #include <fmt/format.h>
 #include <sstream>
 
@@ -64,10 +67,26 @@ public:
 class TestDatabaseHelper
 {
 public:
+	static void InitializeItemsHash(ZoneDatabase *db, uint32 max_item_id, size_t estimated_item_count)
+	{
+		// Access protected member - requires friend declaration in SharedDatabase
+		if (!db->items_hash && max_item_id > 0)
+		{
+			static std::vector<uint8> test_items_buffer;
+			uint32 item_count = static_cast<uint32>(estimated_item_count);
+			if (item_count == 0)
+				item_count = 100;
+			uint32 size = static_cast<uint32>(EQ::FixedMemoryHashSet<EQ::ItemData>::estimated_size(item_count, max_item_id + 100));
+			test_items_buffer.resize(size);
+			memset(test_items_buffer.data(), 0, size);
+			db->items_hash = std::make_unique<EQ::FixedMemoryHashSet<EQ::ItemData>>(
+				test_items_buffer.data(), size, item_count, max_item_id + 100);
+		}
+	}
+
 	static void AddTestItem(ZoneDatabase *db, const EQ::ItemData &item_data)
 	{
 		// Access protected member - requires friend declaration in SharedDatabase
-		// REQUIRED: Add "friend class TestDatabaseHelper;" to SharedDatabase class
 		if (db->items_hash && db->items_hash->max_key() >= item_data.ID)
 		{
 			try
@@ -152,7 +171,7 @@ static EQ::ItemData CreateItemData(const LootDropEntryConfig &de_config)
 	item_data.ID = de_config.item_id;
 	strncpy(item_data.Name, ("Test Item " + std::to_string(de_config.item_id)).c_str(), sizeof(item_data.Name) - 1);
 	item_data.MaxCharges = de_config.item_charges > 0 ? de_config.item_charges : 1;
-	item_data.ItemType = EQ::item::ItemTypeCommon;
+	item_data.ItemType = EQ::item::ItemTypeMisc;
 	item_data.NoDrop = 1;
 	item_data.min_expansion = -1.0f;
 	item_data.max_expansion = -1.0f;
@@ -189,21 +208,6 @@ static NPCType CreateTestNPCType(uint32 loottable_id)
 	return npc_type;
 }
 
-static void InitializeItemsHash(uint32 max_item_id, size_t estimated_item_count)
-{
-	static std::vector<uint8> test_items_buffer;
-	if (!database.items_hash && max_item_id > 0)
-	{
-		uint32 item_count = static_cast<uint32>(estimated_item_count);
-		if (item_count == 0)
-			item_count = 100;
-		uint32 size = static_cast<uint32>(EQ::FixedMemoryHashSet<EQ::ItemData>::estimated_size(item_count, max_item_id + 100));
-		test_items_buffer.resize(size);
-		memset(test_items_buffer.data(), 0, size);
-		database.items_hash = std::make_unique<EQ::FixedMemoryHashSet<EQ::ItemData>>(
-			test_items_buffer.data(), size, item_count, max_item_id + 100);
-	}
-}
 
 static uint32 FindMaxItemID(const LootTableTestConfig &config)
 {
@@ -240,13 +244,13 @@ std::string FormatItemList(const std::vector<uint32> &items)
 	return oss.str();
 }
 
-void RunLootTableTest(const LootTableTestConfig &config)
+void NPCLootTableTest::RunLootTableTest(const LootTableTestConfig &config)
 {
 	Zone *original_zone = zone;
 
 	// Initialize database items hash
 	uint32 max_item_id = FindMaxItemID(config);
-	InitializeItemsHash(max_item_id, config.lootdrops.size() * 10);
+	TestDatabaseHelper::InitializeItemsHash(&database, max_item_id, config.lootdrops.size() * 10);
 
 	// Create test zone
 	Zone test_zone(1, "testzone", 0xFFFFFFFF);
