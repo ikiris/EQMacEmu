@@ -2920,6 +2920,9 @@ void Mob::SetTarget(Mob* mob)
 {
 	if (target == mob) return;
 	target = mob;
+	entity_list.UpdateHoTT(this);
+	if (IsClient())
+		CastToClient()->SetHoTT(mob && mob->GetTarget() ? mob->GetTarget()->GetID() : 0);
 	if(IsNPC())
 		parse->EventNPC(EVENT_TARGET_CHANGE, CastToNPC(), mob, "", 0);
 	else if (IsClient())
