@@ -1137,6 +1137,7 @@ public:
 	inline bool GetPendingGuildInvitation() { return PendingGuildInvitation; }
 	void LocateCorpse();
 	void SendTargetCommand(uint32 EntityID);
+	void SetHoTT(uint16 mob_id);
 	bool MoveItemToInventory(EQ::ItemInstance *BInst, bool UpdateClient = false);
 	std::list<RespawnOption> respawn_options;
 	void SetPendingRezzData(uint32 zoneID, uint32 zoneGuildID, int XP, uint32 DBID, uint16 SpellID, const char *CorpseName) { PendingRezzZoneID = zoneID, PendingRezzZoneGuildID = zoneGuildID, PendingRezzXP = XP; PendingRezzDBID = DBID; PendingRezzSpellID = SpellID; PendingRezzCorpseName = CorpseName; }
